@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     characters,
   }: { settings: WorkSettings; story: Story; characters: Character[] } = await req.json();
 
-  const pageCount = Math.min(settings.pageCount, 8);
+  const pageCount = Math.min(settings.pageCount, 6);
   const charSummary = characters
     .map((c) => `${c.name}（${c.age}歳・${c.personality}）`)
     .join('、');
@@ -66,7 +66,7 @@ ${pageCount}ページ分を以下のJSON形式のみで出力してください�
 
   try {
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 8000,
       messages: [{ role: 'user', content: prompt }],
     });
