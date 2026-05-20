@@ -41,18 +41,19 @@ ${story.synopsis}
   try {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
+      max_tokens: 5000,
       messages: [{ role: 'user', content: prompt }],
     });
 
     const text = message.content[0].type === 'text' ? message.content[0].text : '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) throw new Error('JSON not found in response');
+    if (!jsonMatch) throw new Error(`JSON配列が見つかりません。レスポンス: ${text.slice(0, 200)}`);
 
     const characters: Character[] = JSON.parse(jsonMatch[0]);
     return NextResponse.json(characters);
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: 'キャラクター生成に失敗しました' }, { status: 500 });
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('generate-characters error:', msg);
+    return NextResponse.json({ error: `キャラクター生成に失敗しました: ${msg}` }, { status: 500 });
   }
 }
