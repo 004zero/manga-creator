@@ -417,10 +417,24 @@ export default function Home() {
               {current.pages && step === 'pages' && (
                 <PagePreview
                   pages={current.pages}
+                  artStyle={current.settings.artStyle}
                   onExport={() => setShowExport(true)}
                   onGeneratePrompts={handleGeneratePrompts}
                   promptsLoading={loading}
                   hasPrompts={current.pages.some((p) => p.panels.some((panel) => !!panel.imagePromptEn))}
+                  onPanelImageGenerated={(pageIdx, panelIdx, url) => {
+                    if (!current.pages) return;
+                    const newPages = current.pages.map((p, pi) =>
+                      pi !== pageIdx ? p : {
+                        ...p,
+                        panels: p.panels.map((panel, pni) =>
+                          pni !== panelIdx ? panel : { ...panel, generatedImageUrl: url }
+                        ),
+                      }
+                    );
+                    const updated = saveProject({ ...current, pages: newPages });
+                    setCurrent(updated);
+                  }}
                 />
               )}
             </div>

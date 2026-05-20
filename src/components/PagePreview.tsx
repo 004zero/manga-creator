@@ -1,31 +1,43 @@
 'use client';
 import { useState } from 'react';
 import { Page } from '@/types/manga';
+import { PanelImage } from '@/components/PanelImage';
 
 interface Props {
   pages: Page[];
+  artStyle: string;
   onExport: () => void;
   onGeneratePrompts?: () => void;
   promptsLoading?: boolean;
   hasPrompts?: boolean;
+  onPanelImageGenerated: (pageIdx: number, panelIdx: number, url: string) => void;
 }
 
-export function PagePreview({ pages, onExport, onGeneratePrompts, promptsLoading, hasPrompts }: Props) {
+export function PagePreview({ pages, artStyle, onExport, onGeneratePrompts, promptsLoading, hasPrompts, onPanelImageGenerated }: Props) {
   const [selectedPage, setSelectedPage] = useState(0);
   const [showPrompts, setShowPrompts] = useState(false);
+  const [showImages, setShowImages] = useState(false);
 
   const page = pages[selectedPage];
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">ページ構成</h2>
-        <button
-          onClick={() => setShowPrompts(!showPrompts)}
-          className="text-xs px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-full transition-colors"
-        >
-          {showPrompts ? '通常表示' : '🎨 プロンプト表示'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setShowImages(!showImages); setShowPrompts(false); }}
+            className={`text-xs px-3 py-1 rounded-full transition-colors ${showImages ? 'bg-purple-600 text-white' : 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300'}`}
+          >
+            🖼️ 画像生成
+          </button>
+          <button
+            onClick={() => { setShowPrompts(!showPrompts); setShowImages(false); }}
+            className={`text-xs px-3 py-1 rounded-full transition-colors ${showPrompts ? 'bg-orange-500 text-white' : 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300'}`}
+          >
+            🎨 プロンプト
+          </button>
+        </div>
       </div>
 
       {/* ページ選択タブ */}
@@ -41,6 +53,7 @@ export function PagePreview({ pages, onExport, onGeneratePrompts, promptsLoading
             }`}
           >
             P{p.page}
+            {p.panels.some(panel => panel.generatedImageUrl) && ' 🖼️'}
           </button>
         ))}
       </div>
@@ -56,13 +69,22 @@ export function PagePreview({ pages, onExport, onGeneratePrompts, promptsLoading
             </p>
           </div>
 
-          {page.panels.map((panel) => (
+          {page.panels.map((panel, panelIdx) => (
             <div key={panel.panel} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2">
               <h4 className="font-bold text-sm text-gray-700 dark:text-gray-300">
                 コマ {panel.panel}
               </h4>
 
-              {showPrompts ? (
+              {showImages ? (
+                <>
+                  <PanelView panel={panel} />
+                  <PanelImage
+                    panel={panel}
+                    artStyle={artStyle}
+                    onImageGenerated={(url) => onPanelImageGenerated(selectedPage, panelIdx, url)}
+                  />
+                </>
+              ) : showPrompts ? (
                 <PromptView panel={panel} />
               ) : (
                 <PanelView panel={panel} />
@@ -167,10 +189,7 @@ function PromptRow({ label, value, onCopy }: { label: string; value: string; onC
     <div className="bg-gray-50 dark:bg-gray-800 rounded p-2">
       <div className="flex justify-between items-center mb-1">
         <span className="text-xs font-bold text-gray-600 dark:text-gray-400">{label}</span>
-        <button
-          onClick={() => onCopy(value)}
-          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
-        >
+        <button onClick={() => onCopy(value)} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400">
           コピー
         </button>
       </div>

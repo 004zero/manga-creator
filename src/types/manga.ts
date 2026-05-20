@@ -39,6 +39,7 @@ export interface Panel {
   backgroundPrompt: string;
   negativePrompt: string;
   imageRatio: string;
+  generatedImageUrl?: string;
 }
 
 export interface Page {
