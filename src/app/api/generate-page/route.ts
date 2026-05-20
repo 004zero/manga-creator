@@ -40,36 +40,14 @@ export async function POST(req: NextRequest) {
 【キャラ】${charSummary}
 ${prevSummary}
 
-ページ${pageNumber}の内容をJSON形式のみで出力してください（\`\`\`不要）:
+ページ${pageNumber}を以下のJSON形式のみで出力してください（説明文・\`\`\`は絶対に付けない）。panelCountは必ず3にしてください:
 
-{
-  "page": ${pageNumber},
-  "purpose": "このページの役割（20字以内）",
-  "panelCount": 3,
-  "panels": [
-    {
-      "panel": 1,
-      "scene": "シーン説明（40字以内）",
-      "dialogue": "セリフ（なければ空文字）",
-      "narration": "ナレーション（なければ空文字）",
-      "expression": "表情",
-      "cameraAngle": "アングル",
-      "background": "背景（20字以内）",
-      "drawingInstruction": "作画指示（40字以内）",
-      "imagePromptJa": "",
-      "imagePromptEn": "",
-      "characterPrompt": "",
-      "backgroundPrompt": "",
-      "negativePrompt": "",
-      "imageRatio": "2:3"
-    }
-  ]
-}`;
+{"page":${pageNumber},"purpose":"役割20字以内","panelCount":3,"panels":[{"panel":1,"scene":"シーン30字","dialogue":"セリフまたは空文字","narration":"ナレまたは空文字","expression":"表情","cameraAngle":"アングル","background":"背景20字","drawingInstruction":"指示30字","imagePromptJa":"","imagePromptEn":"","characterPrompt":"","backgroundPrompt":"","negativePrompt":"","imageRatio":"2:3"},{"panel":2,"scene":"...","dialogue":"...","narration":"...","expression":"...","cameraAngle":"...","background":"...","drawingInstruction":"...","imagePromptJa":"","imagePromptEn":"","characterPrompt":"","backgroundPrompt":"","negativePrompt":"","imageRatio":"2:3"},{"panel":3,"scene":"...","dialogue":"...","narration":"...","expression":"...","cameraAngle":"...","background":"...","drawingInstruction":"...","imagePromptJa":"","imagePromptEn":"","characterPrompt":"","backgroundPrompt":"","negativePrompt":"","imageRatio":"2:3"}]}`;
 
   try {
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
+      max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }],
     });
 
