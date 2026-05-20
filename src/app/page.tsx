@@ -179,6 +179,39 @@ export default function Home() {
     }
   };
 
+  const handleGeneratePrompts = async () => {
+    if (!current?.pages || !current?.characters) return;
+    if (!apiKey) { setShowApiKey(true); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/generate-prompts', {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          pages: current.pages,
+          characters: current.characters,
+          settings: current.settings,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const promptData: { page: number; panel: number; imagePromptJa: string; imagePromptEn: string; characterPrompt: string; backgroundPrompt: string; negativePrompt: string; imageRatio: string }[] = await res.json();
+      const updatedPages = current.pages.map((p) => ({
+        ...p,
+        panels: p.panels.map((panel) => {
+          const found = promptData.find((d) => d.page === p.page && d.panel === panel.panel);
+          return found ? { ...panel, ...found } : panel;
+        }),
+      }));
+      const updated = saveProject({ ...current, pages: updatedPages });
+      setCurrent(updated);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const steps: { key: Step; label: string; available: boolean }[] = [
     { key: 'settings', label: '①作品設定', available: true },
     { key: 'story', label: '②ストーリー', available: !!current?.story },
@@ -367,6 +400,9 @@ export default function Home() {
                 <PagePreview
                   pages={current.pages}
                   onExport={() => setShowExport(true)}
+                  onGeneratePrompts={handleGeneratePrompts}
+                  promptsLoading={loading}
+                  hasPrompts={current.pages.some((p) => p.panels.some((panel) => !!panel.imagePromptEn))}
                 />
               )}
             </div>

@@ -2,6 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { WorkSettings, Story } from '@/types/manga';
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get('x-api-key') || process.env.ANTHROPIC_API_KEY || '';
   if (!apiKey) return NextResponse.json({ error: 'APIキーが設定されていません' }, { status: 401 });

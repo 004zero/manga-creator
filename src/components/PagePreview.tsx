@@ -5,9 +5,12 @@ import { Page } from '@/types/manga';
 interface Props {
   pages: Page[];
   onExport: () => void;
+  onGeneratePrompts?: () => void;
+  promptsLoading?: boolean;
+  hasPrompts?: boolean;
 }
 
-export function PagePreview({ pages, onExport }: Props) {
+export function PagePreview({ pages, onExport, onGeneratePrompts, promptsLoading, hasPrompts }: Props) {
   const [selectedPage, setSelectedPage] = useState(0);
   const [showPrompts, setShowPrompts] = useState(false);
 
@@ -101,6 +104,15 @@ export function PagePreview({ pages, onExport }: Props) {
         </div>
       </div>
 
+      {onGeneratePrompts && (
+        <button
+          onClick={onGeneratePrompts}
+          disabled={promptsLoading}
+          className="w-full py-3 px-6 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-bold rounded-xl text-base transition-colors"
+        >
+          {promptsLoading ? '🔄 プロンプト生成中...' : hasPrompts ? '🎨 プロンプト再生成' : '🎨 画像生成AIプロンプトを作る'}
+        </button>
+      )}
       <button
         onClick={onExport}
         className="w-full py-3 px-6 bg-gray-800 hover:bg-gray-900 dark:bg-gray-200 dark:hover:bg-white dark:text-gray-900 text-white font-bold rounded-xl text-base transition-colors"

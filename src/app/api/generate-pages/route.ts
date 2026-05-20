@@ -2,6 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { WorkSettings, Story, Character, Page } from '@/types/manga';
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get('x-api-key') || process.env.ANTHROPIC_API_KEY || '';
   if (!apiKey) return NextResponse.json({ error: 'APIキーが設定されていません' }, { status: 401 });
@@ -12,7 +14,7 @@ export async function POST(req: NextRequest) {
     characters,
   }: { settings: WorkSettings; story: Story; characters: Character[] } = await req.json();
 
-  const pageCount = Math.min(settings.pageCount, 10);
+  const pageCount = Math.min(settings.pageCount, 8);
   const charSummary = characters
     .map((c) => `${c.name}（${c.age}歳・${c.personality}）`)
     .join('、');
@@ -34,29 +36,29 @@ ${story.structure}
 【登場キャラクター】
 ${charSummary}
 
-${pageCount}ページ分を以下のJSON形式で出力してください。他の文字は一切含めないでください:
+${pageCount}ページ分を以下のJSON形式のみで出力してください。説明文や\`\`\`は不要です:
 
 [
   {
     "page": 1,
-    "purpose": "このページの役割・目的",
-    "panelCount": 4,
+    "purpose": "このページの役割",
+    "panelCount": 3,
     "panels": [
       {
         "panel": 1,
-        "scene": "シーンの状況説明",
+        "scene": "シーンの状況（50字以内）",
         "dialogue": "セリフ（ない場合は空文字）",
-        "narration": "ナレーション・モノローグ（ない場合は空文字）",
-        "expression": "キャラクターの表情",
-        "cameraAngle": "カメラアングル（例：正面・俯瞰・煽り・寄り・引き）",
-        "background": "背景の説明",
-        "drawingInstruction": "作画師への指示",
-        "imagePromptJa": "画像生成AI用日本語プロンプト",
-        "imagePromptEn": "画像生成AI用英語プロンプト",
-        "characterPrompt": "キャラクター固定用プロンプト",
-        "backgroundPrompt": "背景プロンプト",
-        "negativePrompt": "ネガティブプロンプト",
-        "imageRatio": "画像比率（例：1:1・4:3・16:9・2:3）"
+        "narration": "ナレーション（ない場合は空文字）",
+        "expression": "表情",
+        "cameraAngle": "アングル",
+        "background": "背景（30字以内）",
+        "drawingInstruction": "作画指示（50字以内）",
+        "imagePromptJa": "",
+        "imagePromptEn": "",
+        "characterPrompt": "",
+        "backgroundPrompt": "",
+        "negativePrompt": "",
+        "imageRatio": "2:3"
       }
     ]
   }
@@ -71,12 +73,13 @@ ${pageCount}ページ分を以下のJSON形式で出力してください。他�
 
     const text = message.content[0].type === 'text' ? message.content[0].text : '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) throw new Error('JSON not found in response');
+    if (!jsonMatch) throw new Error(`JSON配列が見つかりません: ${text.slice(0, 300)}`);
 
     const pages: Page[] = JSON.parse(jsonMatch[0]);
     return NextResponse.json(pages);
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: 'ページ構成生成に失敗しました' }, { status: 500 });
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('generate-pages error:', msg);
+    return NextResponse.json({ error: `ページ構成生成に失敗しました: ${msg}` }, { status: 500 });
   }
 }
