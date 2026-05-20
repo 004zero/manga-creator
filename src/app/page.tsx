@@ -45,6 +45,7 @@ export default function Home() {
   const [showProjects, setShowProjects] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [pageProgress, setPageProgress] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -157,18 +158,27 @@ export default function Home() {
     if (!apiKey) { setShowApiKey(true); return; }
     setLoading(true);
     setError('');
+    const totalPages = Math.min(current.settings.pageCount, 6);
+    const pages: Page[] = [];
     try {
-      const res = await fetch('/api/generate-pages', {
-        method: 'POST',
-        headers: apiHeaders(),
-        body: JSON.stringify({
-          settings: current.settings,
-          story: current.story,
-          characters: current.characters,
-        }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const pages: Page[] = await res.json();
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        setPageProgress(`ページ ${pageNum} / ${totalPages} を生成中...`);
+        const res = await fetch('/api/generate-page', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({
+            pageNumber: pageNum,
+            totalPages,
+            settings: current.settings,
+            story: current.story,
+            characters: current.characters,
+            previousPages: pages.map((p) => ({ page: p.page, purpose: p.purpose })),
+          }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const page: Page = await res.json();
+        pages.push(page);
+      }
       const updated = saveProject({ ...current, pages });
       setCurrent(updated);
       setStep('pages');
@@ -176,6 +186,7 @@ export default function Home() {
       setError(String(e));
     } finally {
       setLoading(false);
+      setPageProgress('');
     }
   };
 
@@ -352,6 +363,13 @@ export default function Home() {
           {error && (
             <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-xl text-sm text-red-700 dark:text-red-400">
               エラー: {error}
+            </div>
+          )}
+
+          {/* プログレス表示 */}
+          {pageProgress && (
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-xl text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+              <span className="animate-spin">⏳</span> {pageProgress}
             </div>
           )}
 
